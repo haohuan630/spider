@@ -5,18 +5,18 @@
 # @File    : views.py
 # @Software: PyCharm
 
-# -*- coding: utf-8 -*-
 import datetime
-import json
 import os
 import re
 
 from lxml import etree
 import requests
 
-from spider import setting
+from sheitc import setting
+from spider.libs.log import loggerInFile
+from spider.model.save_data_to_db import save_data
+from spider.setting import DATA_CLASS
 
-path_add = os.path.dirname(os.path.realpath(__file__))
 run_file = "上海信息经济委员会"
 
 
@@ -31,7 +31,7 @@ def get_news_info(news_info_url_list):
         news_info = response.text
 
         news_info = etree.HTML(news_info)
-        news_info_id = url.split('/')[-1].split('.')[0]
+        news_id = url.split('/')[-1].split('.')[0]
         try:
             news_info_img = news_info.xpath('//*[@id="ivs_content"]/p/img/@src')
         except BaseException as e:
@@ -53,25 +53,33 @@ def get_news_info(news_info_url_list):
             print(e)
             news_info_content = ['']
 
-        # print(news_info, news_info_img)
-
-        item = {}
         news_content = ''
         news_img = ''
         for con_item in news_info_content:
-            news_content += con_item.replace(u'\xa0', u' ').replace(u'\u3000', '').replace(u'\r\n ', '').replace(u' ',
-                                                                                                                 '') + '\r\n'
+            news_content += con_item.replace(u'\xa0', u' ').replace(u'\u3000', '').replace(u'\r\n ', ''). \
+                                replace(u' ', '') + '\r\n'
 
         for img_item in news_info_img:
             news_img += img_item + '\r\n'
 
-        item['news_content'] = news_content
-        item['news_img'] = news_img
-        item['news_id'] = news_info_id
-        item['news_title'] = news_info_title
-        item['news_source'] = news_info_source
-        item['news_url'] = str(url)
-        item['spider_time'] = datetime.date.today()
+        news_class = DATA_CLASS[setting.url]
+
+        news_dict = {}
+
+        news_dict['news_id'] = news_id + "_1"
+        news_dict['news_url'] = str(url)
+        news_dict['news_title'] = news_info_title
+        news_dict['news_abstract'] = ''
+        news_dict['news_content'] = news_content
+        news_dict['news_publish_time'] = ''
+        news_dict['news_source'] = news_info_source
+        news_dict['news_author'] = ''
+        news_dict['news_img'] = news_img
+        news_dict['news_class'] = news_class
+        news_dict['spider_time'] = datetime.date.today()
+
+        # print(news_class)
+        save_data(news_dict)
 
 
 def getDate(date):
@@ -81,35 +89,6 @@ def getDate(date):
     day = str(yesterday).split('-')[-1]
 
     return day
-
-
-def del_log():
-    """删除日志"""
-    # 删除七天的日志
-    try:
-        path = "./logs/log{}.txt".format(getDate(7))
-        os.remove(path)
-    except BaseException as e:
-        print(e)
-
-
-def save_log(item):
-    """日志"""
-    try:
-        now_time = datetime.datetime.now()
-
-        log_item = str(now_time) + '------' + str(item)
-        path_file_name = './logs/log{}.txt'.format(getDate(0))
-
-        if not os.path.exists(path_file_name):
-            with open(path_file_name, "x") as f:
-                pass
-
-        with open(path_file_name, "a") as f:
-            logs = json.dumps(log_item, ensure_ascii=False) + '\n'
-            f.writelines(logs)
-    except BaseException as e:
-        print(e)
 
 
 def news_info_main(item):
@@ -139,12 +118,9 @@ def news_info_main(item):
         get_news_info(news_info_url_list)
 
 
-# @loggerInFile("sheitclog.txt", run_file, path_add)
+@loggerInFile("sheitc_log.txt", run_file)
 def run():
-    # 人员信息
-    # spider_main()
     # 新闻动态
-    # del_log()
     news_list = ['zxxx', 'ttxw']
     for item in news_list:
         news_info_main(item)

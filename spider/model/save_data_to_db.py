@@ -14,7 +14,7 @@ def save_data(item):
         connect = cs_and_con[1]
 
         # # 查询操作
-        sql_select = "select * from shobserver WHERE news_id=%s"
+        sql_select = "select * from crm_content WHERE news_id=%s"
         value_select = item['news_id']
         # 先进行查重处理
         cursor.execute(sql_select, value_select)
@@ -24,7 +24,7 @@ def save_data(item):
         # 有重复就更新， 没有重复就保存
         if repetition:
             # 更新
-            sql_update = "update shobserver set news_id=%s, news_url=%s, news_title=%s, news_abstract=%s," \
+            sql_update = "update crm_content set news_id=%s, news_url=%s, news_title=%s, news_abstract=%s," \
                          " news_content=%s ,news_publish_time=%s,news_source=%s,news_author=%s,spider_time=%s," \
                          "news_img=%s where news_id=%s"
             value_update = (
@@ -44,7 +44,7 @@ def save_data(item):
         else:
             # 执行数据操作
             # 插入操作
-            sql_insert = "insert into shobserver(news_id, news_url, news_title, news_abstract, news_content ," \
+            sql_insert = "insert into crm_content(news_id, news_url, news_title, news_abstract, news_content ," \
                          "news_publish_time,news_source,news_author,spider_time, news_img) " \
                          "values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             value_insert = (
